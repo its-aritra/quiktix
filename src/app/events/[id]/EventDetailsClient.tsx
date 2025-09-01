@@ -90,9 +90,10 @@ export default function EventDetailsClient({ eventId }: { eventId: string }) {
         } else {
             setMessage('Booking successful!');
             // Generate QR code from the booking ID
-            const bookingData : Booking = data[0]; // your RPC returns table type
+            const bookingData : Booking = data[0];
+            const bookingId = bookingData.id;
             if (bookingData) {
-                const qr = await QRCode.toDataURL(JSON.stringify(bookingData));
+                const qr = await QRCode.toDataURL(bookingId);
                 setQrCode(qr);
             }
         }
