@@ -1,35 +1,42 @@
+import TopBar from "@/components/TopBar"
 import { supabase } from "@/lib/supabaseClient"
 import Link from "next/link"
 
-export default async function HomePage() {
+export default async function EventPage() {
   // Fetch data directly on the server
-  const { data: events, error } = await supabase.from("events").select("*").limit(5)
+  const { data: events, error } = await supabase.from("events").select("*").limit(9)
 
   if (error) {
     return <div className="p-6 text-red-500">Error: {error.message}</div>
   }
 
   return (
-    <main className="p-6">
-      <h1 className="text-3xl font-bold mb-4">Upcoming Events 🎫</h1>
-      <ul className="space-y-3">
-        {events?.map((event) => (
-          <li
-            key={event.id}
-            className="p-4 border rounded-xl shadow-sm hover:shadow-md transition"
-          >
-            <Link href={`/events/${event.id}`} className="block">
-              <h2 className="text-xl font-semibold text-white-600 cursor-pointer">
+    <main className="relative min-h-screen p-6">
+      {/* Top navigation bar */}
+      <TopBar />
+
+      <div className="mt-16 max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold mb-20 text-center">Upcoming Events 🎫</h1>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {events?.map((event) => (
+            <Link
+              key={event.id}
+              href={`/events/${event.id}`}
+              className="group bg-gray-800/50 backdrop-blur-md rounded-2xl p-6 shadow-lg hover:shadow-xl transition border border-gray-700 hover:border-indigo-500"
+            >
+              <h2 className="text-2xl font-semibold text-indigo-400 group-hover:text-indigo-300 transition">
                 {event.title}
               </h2>
-              <p className="text-gray-600">{event.description}</p>
-              <p className="text-sm text-gray-500">
-                📅 {event.eventDate} | 📍 {event.location}
-              </p>
+              <p className="text-gray-300 mt-2 line-clamp-2">{event.description}</p>
+              <div className="mt-4 text-sm text-gray-400">
+                <p>📅 {new Date(event.eventDate).toLocaleDateString()}</p>
+                <p>📍 {event.location}</p>
+              </div>
             </Link>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+      </div>
     </main>
   )
 }

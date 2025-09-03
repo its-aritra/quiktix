@@ -5,6 +5,6 @@ interface Props {
 }
 
 export default async function EventDetailsPage({ params }: Props) {
-  const eventId = params.id; // safe now
+  const eventId = params.id;
   return <EventDetailsClient eventId={eventId} />;
 }
