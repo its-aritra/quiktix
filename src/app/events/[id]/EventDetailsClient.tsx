@@ -6,6 +6,15 @@ import { useAuth } from '@/context/authContext';
 import QRCode from 'qrcode';
 import Image from 'next/image';
 import TopBar from '@/components/TopBar';
+import {
+    Calendar,
+    Users,
+    AlertTriangle,
+    XCircle,
+    CheckCircle,
+    Ticket,
+    Tag,
+} from 'lucide-react';
 
 interface Event {
     id: string;
@@ -60,7 +69,7 @@ export default function EventDetailsClient({ eventId }: { eventId: string }) {
 
     const handleBooking = async () => {
         if (!user) {
-            setMessage('⚠️ You must be logged in to book.');
+            setMessage('You must be logged in to book.');
             return;
         }
 
@@ -78,7 +87,7 @@ export default function EventDetailsClient({ eventId }: { eventId: string }) {
             bookedSeatsData?.reduce((sum, b) => sum + b.seatsBooked, 0) ?? 0;
 
         if (totalBooked + seats > event.totalSeats) {
-            setMessage('❌ Not enough seats available.');
+            setMessage('Not enough seats available.');
             return;
         }
 
@@ -92,7 +101,7 @@ export default function EventDetailsClient({ eventId }: { eventId: string }) {
             setMessage(`Booking failed: ${error.message}`);
         } else {
             const bookingData: Booking = data[0];
-            setMessage('✅ Booking successful!');
+            setMessage('Booking successful!');
             const qr = await QRCode.toDataURL(bookingData.id);
             setQrCode(qr);
         }
@@ -104,18 +113,20 @@ export default function EventDetailsClient({ eventId }: { eventId: string }) {
             <div className="max-w-3xl mx-auto px-4 py-20">
                 <div className="bg-gray-800/50 backdrop-blur-md rounded-2xl p-6">
                     {/* Event Info */}
-                    <h1 className="text-3xl font-bold text-white-900">{event.title}</h1>
+                    <h1 className="text-3xl font-bold text-white">{event.title}</h1>
                     <p className="text-gray-300 mt-2">{event.description}</p>
 
-                    <div className="mt-4 space-y-2 text-white-700">
-                        <p>
-                            📅 <span className="font-medium">{event.eventDate}</span>
+                    <div className="mt-4 space-y-2 text-white">
+                        <p className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-indigo-400" />{' '}
+                            <span className="font-medium">{event.eventDate}</span>
                         </p>
-                        <p>
-                            💰 Price: <span className="font-medium">₹{event.price}</span>
+                        <p className="flex items-center gap-2">
+                            <Tag className="w-4 h-4 text-green-400" /> Price:{' '}
+                            <span className="font-medium">₹{event.price}</span>
                         </p>
-                        <p>
-                            🎟️ Total Seats:{' '}
+                        <p className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-yellow-400" /> Total Seats:{' '}
                             <span className="font-medium">{event.totalSeats}</span>
                         </p>
                     </div>
@@ -140,19 +151,26 @@ export default function EventDetailsClient({ eventId }: { eventId: string }) {
                                 </button>
                             </div>
                         ) : (
-                            <p className="text-red-500">Please log in to book tickets.</p>
+                            <p className="text-red-500 flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4" />
+                                Please log in to book tickets.
+                            </p>
                         )}
 
                         {message && (
-                            <p className="mt-3 text-sm text-gray-400 font-medium">{message}</p>
+                            <p className="mt-3 text-sm text-gray-400 font-medium flex items-center gap-2">
+                                {message.includes('failed') && <XCircle className="w-4 h-4 text-red-500" />}
+                                {message.includes('successful') && <CheckCircle className="w-4 h-4 text-green-500" />}
+                                {message}
+                            </p>
                         )}
                     </div>
 
                     {/* QR Code Section */}
                     {qrCode && (
                         <div className="mt-6 p-4 border rounded-lg bg-gray-800/50 backdrop-blur-md text-center">
-                            <h2 className="text-lg font-semibold text-gray-300 mb-2">
-                                🎫 Your Booking QR Code
+                            <h2 className="text-lg font-semibold text-gray-300 mb-2 flex items-center justify-center gap-2">
+                                <Ticket className="w-5 h-5 text-indigo-400" /> Your Booking QR Code
                             </h2>
                             <Image
                                 loader={() => qrCode!}
