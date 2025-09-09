@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/context/authContext';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { User as UserIcon } from 'lucide-react';
+import { updateEmail } from '@/app/actions/updateEmail';
+import { User as UserIcon, CheckCircle, Mail, Info, AlertCircle } from 'lucide-react';
+
 
 interface AppUser {
     id: string;
@@ -18,8 +20,8 @@ export default function ProfileSection() {
 
     const [fullName, setFullName] = useState(user?.fullName ?? '');
     const [email, setEmail] = useState(user?.email ?? '');
+    const [message, setMessage] = useState<JSX.Element | null>(null);
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
 
     // Sync state with user when it becomes available
     useEffect(() => {
@@ -34,34 +36,66 @@ export default function ProfileSection() {
         if (!user) return;
 
         setLoading(true);
-        setMessage('');
+        setMessage(null);
 
         try {
-            // Update full name in "users" table
-            const { error: userError } = await supabase
-                .from('users')
-                .update({ fullName })
-                .eq('id', user.id);
+            const messages: JSX.Element[] = [];
 
-            if (userError) throw userError;
+            // Update fullName if changed
+            if (fullName?.trim() && fullName.trim() !== user.fullName) {
+                const { error: userError } = await supabase
+                    .from('users')
+                    .update({ fullName: fullName.trim() })
+                    .eq('id', user.id);
 
-            // Handle email change
-            if (email && email !== user.email) {
-                const { error: emailError } = await supabase.auth.updateUser({
-                    email,
-                });
-                if (emailError) throw emailError;
+                if (userError) throw userError;
 
-                setMessage('📩 Verification link sent to your new email.');
-            } else {
-                setMessage('✅ Profile updated successfully!');
+                messages.push(
+                    <span key="fullName" className="flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4 text-green-500" /> Profile updated successfully!
+                    </span>
+                );
             }
+
+            // Update email if changed
+            if (email?.trim() && email.trim() !== user.email) {
+                await updateEmail(email.trim());
+
+                const { error: userError } = await supabase
+                    .from('users')
+                    .update({ email: email.trim() })
+                    .eq('id', user.id);
+
+                if (userError) throw userError;
+
+                messages.push(
+                    <span className="relative w-full text-gray-300">
+                        <Mail className="absolute left-0 top-1 w-4 h-4 text-blue-500 -mt-0.5" />
+                        <span className="pl-5">
+                            Verification links sent to old & new email. <br />
+                            Confirm both to complete change.
+                        </span>
+                    </span>
+                );
+            }
+
+            // No changes
+            if (messages.length === 0) {
+                messages.push(
+                    <span key="info" className="flex items-center gap-1">
+                        <Info className="w-4 h-4 text-gray-500" /> No changes to update.
+                    </span>
+                );
+            }
+
+            setMessage(<>{messages.map((m) => m)}</>);
         } catch (err) {
-            if (err instanceof Error) {
-                setMessage(`❌ ${err.message}`);
-            } else {
-                setMessage('❌ Unknown error occurred');
-            }
+            setMessage(
+                <span className="flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4 text-red-500" />{' '}
+                    {err instanceof Error ? err.message : 'Unknown error occurred'}
+                </span>
+            );
         } finally {
             setLoading(false);
         }
@@ -69,8 +103,6 @@ export default function ProfileSection() {
 
     const avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.fullName || user?.email || 'User')
         }&backgroundColor=4b46b9,1e1e2e,000000&backgroundType=gradientLinear`;
-
-
 
     return (
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-lg flex flex-col items-center">
@@ -118,8 +150,11 @@ export default function ProfileSection() {
 
 
             {message && (
-                <p className="mt-4 text-sm text-center text-gray-300">{message}</p>
+                <div className="mt-4 flex flex-col items-center justify-center gap-2 text-sm text-gray-300 text-center">
+                    {message}
+                </div>
             )}
+
         </div>
     );
 }
